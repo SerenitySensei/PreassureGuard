@@ -7,6 +7,7 @@ A Progressive Web App (PWA) that monitors atmospheric pressure in real time, sto
 ## Features
 
 - **Real-time monitoring** – reads pressure from the device's built-in barometer sensor (if available) or via the Open-Meteo API using GPS position
+- **Backend collection** – a scheduled Firebase Cloud Function stores pressure readings every 5 minutes, even when the app is closed
 - **Firebase Firestore** – all readings are stored in the cloud with 30 days of history
 - **Migraine risk indicator** – assesses risk (low / medium / high) based on published research:
   - Daily pressure drop ≥ 5 hPa = elevated risk (Japanese migraine study)
@@ -25,6 +26,8 @@ A Progressive Web App (PWA) that monitors atmospheric pressure in real time, sto
 | `index.html` | The entire app – HTML, CSS and JavaScript in a single file |
 | `manifest.json` | PWA manifest (name, icons, theme colour) |
 | `sw.js` | Service Worker for offline support and push notifications |
+| `functions/` | Firebase Cloud Functions backend that collects pressure readings on a schedule |
+| `firebase.json` | Firebase deploy configuration |
 
 ---
 
@@ -65,6 +68,31 @@ const firebaseConfig = {
 
 ### 2. Deploy
 
+#### Backend collector
+
+The backend collector writes to the same `pressure_readings` collection that the app already reads. By default it uses the Vallentuna fallback coordinates from the frontend:
+
+- Latitude: `59.5344`
+- Longitude: `18.0762`
+
+To deploy the scheduled Cloud Function:
+
+```bash
+cd functions
+npm install
+cd ..
+firebase deploy --only functions
+```
+
+To use another fixed location, create `functions/.env` before deploying:
+
+```bash
+PRESSURE_LAT=59.5344
+PRESSURE_LON=18.0762
+```
+
+The function is named `collectPressureReading`, runs every 5 minutes in `europe-west1`, calls Open-Meteo, and creates idempotent documents with IDs based on the 5-minute time bucket.
+
 The app requires HTTPS for GPS access and push notifications. Easiest options:
 
 **Netlify** (recommended for beginners)
@@ -98,6 +126,8 @@ Each reading is stored as a document in the `pressure_readings` collection:
   "uid": "anonymous-user-id"
 }
 ```
+
+Backend-created readings use `source: "backend-open-meteo"` and `uid: "backend"`, plus `latitude`, `longitude`, and `createdAt` metadata.
 
 Data older than 30 days can be deleted manually using the button in the app.
 
