@@ -881,7 +881,8 @@ async function loadBackendLogs() {
     }));
     renderLogs();
   } catch (e) {
-    addLog('⚠️ Kunde inte läsa backend-loggar: ' + e.message);
+    state.backendLogs = [];
+    renderLogs();
   }
 }
 
