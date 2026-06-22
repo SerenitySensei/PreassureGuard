@@ -302,6 +302,8 @@
 import { initializeApp }   from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 import { getFirestore, collection, query, where, orderBy, limit, getDocs, Timestamp }
   from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+import { getFunctions, httpsCallable }
+  from "https://www.gstatic.com/firebasejs/12.11.0/firebase-functions.js";
 import { getAuth, signInAnonymously }
   from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 
@@ -316,9 +318,9 @@ const firebaseConfig = {
 };
 const fbApp = initializeApp(firebaseConfig);
 const db    = getFirestore(fbApp);
+const fn    = getFunctions(fbApp, 'europe-west1');
 const auth  = getAuth(fbApp);
 const COL   = "pressure_readings";
-const LOG_COL = "backend_events";
 const THIRTY_DAYS_MS = 30 * 24 * 3600 * 1000;
 
 // ─── State ───────────────────────────────────────────────────────────────────
@@ -868,18 +870,15 @@ function addLog(msg) {
 
 async function loadBackendLogs() {
   try {
-    const q = query(collection(db, LOG_COL), orderBy('timestamp', 'desc'), limit(20));
-    const snap = await getDocs(q);
-    state.backendLogs = snap.docs.map(doc => {
-      const data = doc.data();
-      const timeValue = data.timestamp?.toMillis ? data.timestamp.toMillis() : Date.now();
-      return {
-        time: timeValue,
-        source: 'backend',
-        category: data.category || '',
-        message: data.message || '(utan meddelande)'
-      };
-    });
+    const fetchLogs = httpsCallable(fn, 'getBackendLogs');
+    const result = await fetchLogs();
+    state.backendLogs = (result.data?.logs || []).map(entry => ({
+      time: entry.time,
+      source: 'backend',
+      level: entry.level || 'info',
+      category: entry.category || '',
+      message: entry.message || '(utan meddelande)'
+    }));
     renderLogs();
   } catch (e) {
     addLog('⚠️ Kunde inte läsa backend-loggar: ' + e.message);

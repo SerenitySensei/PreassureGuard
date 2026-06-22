@@ -1,4 +1,5 @@
 const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { onCall } = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
 
@@ -113,6 +114,26 @@ function changePerMinute(currentHpa, currentTime, previous) {
 
   return (currentHpa - previous.hpa) / minutes;
 }
+
+exports.getBackendLogs = onCall(async () => {
+  const snap = await db.collection(LOG_COL)
+    .orderBy("timestamp", "desc")
+    .limit(20)
+    .get();
+
+  return {
+    logs: snap.docs.map(doc => {
+      const data = doc.data();
+      return {
+        time: data.timestamp?.toMillis ? data.timestamp.toMillis() : Date.now(),
+        level: data.level || "info",
+        category: data.category || "",
+        message: data.message || "(utan meddelande)",
+        details: data.details || {}
+      };
+    })
+  };
+});
 
 exports.collectPressureReading = onSchedule(
   {
