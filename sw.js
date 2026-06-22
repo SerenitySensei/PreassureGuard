@@ -1,9 +1,9 @@
-// Build timestamp: 2026-03-30 17:34:36 UTC
+// Build timestamp: 2026-06-22 18:37:00 UTC
 // sw.js – förenklad Service Worker för Lufttryck-appen
 // Fokus: cache/offline-stöd och öppna appen från notis.
 // Ingen Periodic Background Sync.
 
-const CACHE_NAME = 'lufttryck-app-v2';
+const CACHE_NAME = 'lufttryck-app-v3';
 const APP_SHELL = [
   './',
   './index.html',
