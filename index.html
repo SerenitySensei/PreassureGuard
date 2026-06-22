@@ -398,6 +398,7 @@ const translations = {
     couldNotFetchPressure: '❌ Could not fetch pressure',
     notificationEnabled: '🔔 Push notifications enabled',
     notificationDenied: '⛔ Notifications denied',
+    notifNotSupported: 'Your browser does not support notifications.',
     firebaseConnected: '✅ Firebase Firestore connected',
     serviceWorkerError: '⚠️ Service worker error: ',
     swRegistered: '⚙️ Service worker registered',
@@ -458,6 +459,7 @@ const translations = {
     couldNotFetchPressure: '❌ Kunde inte hämta lufttryck',
     notificationEnabled: '🔔 Push-notiser aktiverade',
     notificationDenied: '⛔ Notiser nekades',
+    notifNotSupported: 'Din webbläsare stödjer inte notiser.',
     firebaseConnected: '✅ Firebase Firestore ansluten',
     serviceWorkerError: '⚠️ Service worker-fel: ',
     swRegistered: '⚙️ Service worker registrerad',
@@ -1118,8 +1120,8 @@ async function startMonitoring() {
   if (state.running) return;
   await ensureAuth();
   const hasSensor = await checkSensor();
-  if (hasSensor) { startBarometer(); addLog('📡 Barometersensor hittad'); }
-  else { addLog('🌐 Ingen sensor – använder Open-Meteo API'); }
+  if (hasSensor) { startBarometer(); addLog(t('barometer')); }
+  else { addLog(t('usingAPI')); }
   state.running = true;
   $('statusDot').className = 'status-dot active';
   await tick();
@@ -1128,12 +1130,12 @@ async function startMonitoring() {
 
 // ─── Notifications ───────────────────────────────────────────────────────────
 async function enableNotifications() {
-  if (!('Notification' in window)) { alert('Din webbläsare stödjer inte notiser.'); return; }
+  if (!('Notification' in window)) { alert(t('notifNotSupported') || 'Notifications not supported.'); return; }
   const perm = await Notification.requestPermission();
   if (perm === 'granted') {
     state.notifEnabled = true; $('notifToggle').checked = true;
-    addLog('🔔 Push-notiser aktiverade');
-  } else { addLog('⛔ Notiser nekades'); }
+    addLog(t('notificationEnabled'));
+  } else { addLog(t('notificationDenied')); }
 }
 
 // ─── Events ──────────────────────────────────────────────────────────────────
