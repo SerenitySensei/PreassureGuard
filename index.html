@@ -558,7 +558,7 @@ function updateAllText() {
 
 const cfg = () => ({
   threshold: parseFloat($('threshInput').value) || 0.3,
-  interval:  5 * 60 * 1000
+  interval:  60 * 1000
 });
 
 const $ = id => document.getElementById(id);
@@ -1217,6 +1217,9 @@ window.addEventListener('resize', () => {
   $('dbBadge').textContent = t('connected');
   $('dbBadge').className = 'badge green';
   addLog(t('firebaseConnected'));
+
+  // Hämta ett nytt aktuellt värde direkt och därefter varje minut.
+  await startMonitoring();
 
   // ─── Service Worker ────────────────────────────────────────────────────
   if ('serviceWorker' in navigator) {
