@@ -494,11 +494,19 @@ async function getPressure() {
 
 // ─── Analysis ────────────────────────────────────────────────────────────────
 function analyze() {
-  const r = state.readings;
-  if (r.length < 2) return { changePerMin: null, hourChange: null, dayChange: null };
-  const last = r[r.length - 1], prev = r[r.length - 2];
-  const dtMin = (last.time - prev.time) / 60000;
-  const changePerMin = dtMin > 0 ? (last.hpa - prev.hpa) / dtMin : 0;
+  // Use readings if available, else use historyCache
+  const r = state.readings.length > 0 ? state.readings : state.historyCache;
+  if (r.length < 1) return { changePerMin: null, hourChange: null, dayChange: null };
+  const last = r[r.length - 1];
+  let changePerMin = null;
+  
+  // Calculate changePerMin only if we have 2+ readings in short window
+  if (state.readings.length >= 2) {
+    const prev = state.readings[state.readings.length - 2];
+    const dtMin = (last.time - prev.time) / 60000;
+    changePerMin = dtMin > 0 ? (last.hpa - prev.hpa) / dtMin : 0;
+  }
+  
   const hourAgo = r.find(x => x.time >= last.time - 3600000);
 
   // Använd historyCache (30h) för dygnsberäkning om tillgänglig
@@ -577,7 +585,11 @@ function maybeNotify(hpa, dayChange, migraineLevel) {
 
 // ─── UI ──────────────────────────────────────────────────────────────────────
 function updateUI() {
-  const r = state.readings;
+  // Use state.readings (last 2h) if available, else fall back to latest from historyCache
+  let r = state.readings;
+  if (!r.length && state.historyCache.length) {
+    r = [state.historyCache[state.historyCache.length - 1]];
+  }
   if (!r.length) return;
   const hpa = r[r.length - 1].hpa;
   const { changePerMin, hourChange, dayChange } = analyze();
