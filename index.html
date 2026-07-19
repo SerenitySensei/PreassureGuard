@@ -125,10 +125,13 @@
     .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     .chart-title { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em; color: var(--muted); text-transform: uppercase; }
     .chart-range { font-family: var(--mono); font-size: 0.65rem; color: var(--muted); }
-    .chart-tabs { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; white-space: nowrap; padding-bottom: 4px; }
+    .chart-tabs { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; white-space: nowrap; padding-bottom: 4px; scrollbar-width: none; cursor: grab; }
+    .chart-tabs::-webkit-scrollbar { display: none; }
+    .chart-tabs.dragging { cursor: grabbing; }
     .chart-tab {
       flex-shrink: 0; font-family: var(--mono); font-size: 0.65rem; padding: 4px 8px; border-radius: 100px;
       border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.2s;
+      user-select: none;
     }
     .chart-tab.active { background: rgba(59,130,246,0.15); border-color: rgba(59,130,246,0.4); color: #93c5fd; }
     canvas#chart { width: 100%; height: 150px; display: block; }
@@ -1158,6 +1161,36 @@ document.querySelectorAll('.chart-tab').forEach(btn => {
       drawChart(state.cachedChartData);
     }
   });
+});
+
+// Chart tabs drag functionality
+const chartTabs = document.querySelector('.chart-tabs');
+let isDragging = false;
+let dragStart = 0;
+let scrollLeft = 0;
+
+chartTabs.addEventListener('mousedown', (e) => {
+  isDragging = true;
+  dragStart = e.pageX;
+  scrollLeft = chartTabs.scrollLeft;
+  chartTabs.classList.add('dragging');
+});
+
+chartTabs.addEventListener('mousemove', (e) => {
+  if (!isDragging) return;
+  e.preventDefault();
+  const x = e.pageX - dragStart;
+  chartTabs.scrollLeft = scrollLeft - x;
+});
+
+chartTabs.addEventListener('mouseup', () => {
+  isDragging = false;
+  chartTabs.classList.remove('dragging');
+});
+
+chartTabs.addEventListener('mouseleave', () => {
+  isDragging = false;
+  chartTabs.classList.remove('dragging');
 });
 
 if (Notification.permission === 'granted') {
