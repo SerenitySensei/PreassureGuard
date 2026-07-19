@@ -284,6 +284,7 @@
     <div class="stat-card"><div class="label" id="labelChangeMin">Change/min</div><div class="value" id="changeVal">–</div></div>
     <div class="stat-card"><div class="label" id="labelLastHour">Last hour</div><div class="value" id="hourChange">–</div></div>
     <div class="stat-card"><div class="label" id="labelDayChange">Δ since yesterday</div><div class="value" id="dayChange">–</div></div>
+    <div class="stat-card"><div class="label" id="labelTwoDayChange">Δ since 2 days</div><div class="value" id="twoDayChange">–</div></div>
     <div class="stat-card"><div class="label" id="labelMin24">Min (24h)</div><div class="value" id="minVal">–</div></div>
     <div class="stat-card"><div class="label" id="labelMax24">Max (24h)</div><div class="value" id="maxVal">–</div></div>
   </div>
@@ -390,6 +391,7 @@ const translations = {
     changeMin: 'Change/min',
     lastHour: 'Last hour',
     deltaSinceYesterday: 'Δ since yesterday',
+    deltaSince2Days: 'Δ since 2 days',
     min24h: 'Min (24h)',
     max24h: 'Max (24h)',
     history: 'History',
@@ -452,6 +454,7 @@ const translations = {
     changeMin: 'Förändring/min',
     lastHour: 'Senaste timmen',
     deltaSinceYesterday: 'Δ sedan igår',
+    deltaSince2Days: 'Δ sedan 2 dagar',
     min24h: 'Min (24 tim)',
     max24h: 'Max (24 tim)',
     history: 'Historik',
@@ -550,6 +553,7 @@ function updateAllText() {
   setTextIfExists('labelChangeMin', t('changeMin'));
   setTextIfExists('labelLastHour', t('lastHour'));
   setTextIfExists('labelDayChange', t('deltaSinceYesterday'));
+  setTextIfExists('labelTwoDayChange', t('deltaSince2Days'));
   setTextIfExists('labelMin24', t('min24h'));
   setTextIfExists('labelMax24', t('max24h'));
   setTextIfExists('chartTitle', t('history'));
@@ -719,7 +723,7 @@ async function getPressure() {
 function analyze() {
   // Use readings if available, else use historyCache
   const r = state.readings.length > 0 ? state.readings : state.historyCache;
-  if (r.length < 1) return { changePerMin: null, hourChange: null, dayChange: null };
+  if (r.length < 1) return { changePerMin: null, hourChange: null, dayChange: null, twoDayChange: null };
   const last = r[r.length - 1];
   let changePerMin = null;
   
@@ -732,14 +736,16 @@ function analyze() {
   
   const hourAgo = r.find(x => x.time >= last.time - 3600000);
 
-  // Använd historyCache (30h) för dygnsberäkning om tillgänglig
+  // Använd historyCache för dygnsberäkning och 2-dagars beräkning om tillgänglig
   const longData = state.historyCache.length > r.length ? state.historyCache : r;
   const dayAgo = longData.find(x => x.time >= last.time - 86400000);
+  const twoDaysAgo = longData.find(x => x.time >= last.time - 172800000);
 
   return {
     changePerMin,
     hourChange: hourAgo ? last.hpa - hourAgo.hpa : null,
-    dayChange:  dayAgo  ? last.hpa - dayAgo.hpa  : null
+    dayChange:  dayAgo  ? last.hpa - dayAgo.hpa  : null,
+    twoDayChange: twoDaysAgo ? last.hpa - twoDaysAgo.hpa : null
   };
 }
 
@@ -815,7 +821,7 @@ function updateUI() {
   }
   if (!r.length) return;
   const hpa = r[r.length - 1].hpa;
-  const { changePerMin, hourChange, dayChange } = analyze();
+  const { changePerMin, hourChange, dayChange, twoDayChange } = analyze();
   const { score, level, factors } = calcMigraineRisk(hpa, dayChange);
 
   $('pressureVal').textContent = hpa.toFixed(1);
@@ -850,6 +856,17 @@ function updateUI() {
   } else {
     $('dayChange').textContent = '< 24h data';
     $('dayChange').style.fontSize = '0.7rem';
+  }
+
+  // 2-dagars förändring
+  if (twoDayChange != null) {
+    const tdc = $('twoDayChange');
+    tdc.textContent = (twoDayChange >= 0 ? '+' : '') + twoDayChange.toFixed(1);
+    const absTDC = Math.abs(twoDayChange);
+    tdc.className = 'value' + (absTDC >= 10 ? ' bad' : absTDC >= 6 ? ' warn' : twoDayChange > 0 ? ' good' : '');
+  } else {
+    $('twoDayChange').textContent = '< 48h data';
+    $('twoDayChange').style.fontSize = '0.7rem';
   }
 
   // Migränrisk-kort
