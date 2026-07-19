@@ -1118,10 +1118,12 @@ async function tick() {
   state.readings.push({ time: Date.now(), hpa });
   // Behåll 30 timmar i minnet (för dygnsberäkning + marginal)
   // state.readings = senaste 2h för 2h-grafen
-  state.readings = state.readings.filter(r => r.time >= Date.now() - 7200000);
+  state.readings = state.readings.filter(r => r.time >= Date.now() - 7200000)
+    .sort((a, b) => a.time - b.time);
   // historyCache = senaste 30h för dygnsberäkning
   state.historyCache = [...state.historyCache, { time: Date.now(), hpa }]
-    .filter(r => r.time >= Date.now() - 108000000);
+    .filter(r => r.time >= Date.now() - 108000000)
+    .sort((a, b) => a.time - b.time);
   const { changePerMin, dayChange } = analyze();
   const { level } = calcMigraineRisk(hpa, dayChange);
   maybeNotify(hpa, dayChange, level);
@@ -1169,7 +1171,7 @@ document.querySelectorAll('.chart-tab').forEach(btn => {
       drawChart(state.readings);
     } else {
       const data = await loadHistory(state.chartHours);
-      state.cachedChartData = data.length > 1 ? data : state.readings;
+      state.cachedChartData = data.length > 1 ? data.sort((a, b) => a.time - b.time) : state.readings;
       drawChart(state.cachedChartData);
     }
   });
@@ -1200,11 +1202,12 @@ window.addEventListener('resize', () => {
 
   // state.readings = senaste 2h (används av 2h-grafen och analyze())
   const twoHoursAgo = Date.now() - 2 * 3600000;
-  state.readings = hist30.filter(r => r.time >= twoHoursAgo);
+  state.readings = hist30.filter(r => r.time >= twoHoursAgo)
+    .sort((a, b) => a.time - b.time);
 
   // Spara hela 30h-historiken separat för dygnsberäkning i analyze()
   // Injicera äldre punkter tillfälligt när analyze() behöver dem
-  state.historyCache = hist30;
+  state.historyCache = hist30.sort((a, b) => a.time - b.time);
 
   if (state.readings.length > 1) drawChart(state.readings);
   
