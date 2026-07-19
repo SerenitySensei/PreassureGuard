@@ -349,7 +349,6 @@ const db    = getFirestore(fbApp);
 const fn    = getFunctions(fbApp, 'europe-west1');
 const auth  = getAuth(fbApp);
 const COL   = "pressure_readings";
-const ONE_YEAR_MS = 365 * 24 * 3600 * 1000;
 
 // ─── Translations ────────────────────────────────────────────────────────────
 const translations = {
@@ -577,11 +576,17 @@ async function ensureAuth() {
 
 // ─── Firestore: hämta historik ───────────────────────────────────────────────
 async function loadHistory(hours) {
-  const since = new Date(Date.now() - hours * 3600000);
+  // If hours is 0 or null, load all data
   try {
-    const q = query(collection(db, COL),
-      where("timestamp", ">=", Timestamp.fromDate(since)),
-      orderBy("timestamp", "asc"));
+    let q;
+    if (hours && hours > 0) {
+      const since = new Date(Date.now() - hours * 3600000);
+      q = query(collection(db, COL),
+        where("timestamp", ">=", Timestamp.fromDate(since)),
+        orderBy("timestamp", "asc"));
+    } else {
+      q = query(collection(db, COL), orderBy("timestamp", "asc"));
+    }
     const snap = await getDocs(q);
     return snap.docs.map(d => {
       const data = d.data();
@@ -596,12 +601,10 @@ async function loadHistory(hours) {
 // ─── Firestore: statistik ────────────────────────────────────────────────────
 async function updateDbStats() {
   try {
-    const sinceYear = new Date(Date.now() - ONE_YEAR_MS);
     const since24 = new Date(Date.now() - 24 * 3600000);
 
-    // Antal mätningar (1 år) och äldsta post
+    // Antal mätningar (all time) och äldsta post
     const q30 = query(collection(db, COL),
-      where("timestamp", ">=", Timestamp.fromDate(sinceYear)),
       orderBy("timestamp", "asc"));
     const snap30 = await getDocs(q30);
     $('dbCount').textContent = snap30.size;
@@ -1095,9 +1098,8 @@ async function tick() {
   // state.readings = senaste 2h för 2h-grafen
   state.readings = state.readings.filter(r => r.time >= Date.now() - 7200000)
     .sort((a, b) => a.time - b.time);
-  // historyCache = senaste 30h för dygnsberäkning
+  // historyCache = all data for analysis
   state.historyCache = [...state.historyCache, { time: Date.now(), hpa }]
-    .filter(r => r.time >= Date.now() - ONE_YEAR_MS)
     .sort((a, b) => a.time - b.time);
   const { changePerMin, dayChange } = analyze();
   const { level } = calcMigraineRisk(hpa, dayChange);
@@ -1172,8 +1174,8 @@ window.addEventListener('resize', () => {
   await ensureAuth();
   await updateDbStats();
 
-  // Ladda 1 år för att analyze() ska kunna beräkna dygnsförändring
-  const hist30 = await loadHistory(8760);
+  // Ladda all history for analysis
+  const hist30 = await loadHistory(0);
 
   // state.readings = senaste 2h (används av 2h-grafen och analyze())
   const twoHoursAgo = Date.now() - 2 * 3600000;
