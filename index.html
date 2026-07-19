@@ -153,16 +153,12 @@
     .setting-input { font-family: var(--mono); font-size: 0.9rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 6px 10px; width: 80px; text-align: right; }
     .setting-input::-webkit-outer-spin-button,
     .setting-input::-webkit-inner-spin-button {
-      -webkit-appearance: none; margin: 0; opacity: 1;
-      height: 24px; background: rgba(59,130,246,0.2); color: #3b82f6; cursor: pointer;
+      -webkit-appearance: none; appearance: none; margin: 0;
     }
-    .setting-input::-webkit-outer-spin-button { border-radius: 0 8px 8px 0; }
-    .setting-input::-moz-number-spin-up,
-    .setting-input::-moz-number-spin-down {
-      appearance: none; background: rgba(59,130,246,0.2); color: #3b82f6; cursor: pointer; border: none;
-    }
-    .setting-input::-moz-number-spin-up { border-radius: 0 8px 0 0; }
-    .setting-input::-moz-number-spin-down { border-radius: 0 0 8px 0; }
+    input[type="number"] { -moz-appearance: textfield; }
+    .threshold-spinner { display: flex; gap: 2px; align-items: center; }
+    .spinner-btn { width: 20px; height: 20px; padding: 0; background: rgba(59,130,246,0.2); border: 1px solid rgba(59,130,246,0.3); border-radius: 4px; color: #3b82f6; font-weight: bold; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .spinner-btn:hover { background: rgba(59,130,246,0.3); border-color: rgba(59,130,246,0.5); }
     .toggle { position: relative; width: 44px; height: 24px; cursor: pointer; }
     .toggle input { opacity: 0; width: 0; height: 0; }
     .toggle-track { position: absolute; inset: 0; background: var(--muted); border-radius: 100px; transition: background 0.3s; }
@@ -331,7 +327,11 @@
     </div>
     <div class="setting-row">
       <div><div class="setting-label" id="lblThreshold">Migraine threshold (hPa/day)</div><div class="setting-sub" id="subThreshold">Alert on pressure drop ≥</div></div>
-      <input type="number" class="setting-input" id="threshInput" value="5" step="0.5" min="1" max="20">
+      <div class="threshold-spinner">
+        <button class="spinner-btn" id="threshDecrement">−</button>
+        <input type="number" class="setting-input" id="threshInput" value="5" step="0.5" min="1" max="20">
+        <button class="spinner-btn" id="threshIncrement">+</button>
+      </div>
     </div>
   </div>
 
@@ -1156,6 +1156,18 @@ async function enableNotifications() {
 
 // ─── Events ──────────────────────────────────────────────────────────────────
 $('notifToggle').addEventListener('change', e => { if (e.target.checked) enableNotifications(); else state.notifEnabled = false; });
+
+$('threshDecrement').addEventListener('click', () => {
+  const input = $('threshInput');
+  const val = parseFloat(input.value) || 5;
+  input.value = Math.max(parseFloat(input.min), val - parseFloat(input.step || 0.5));
+});
+
+$('threshIncrement').addEventListener('click', () => {
+  const input = $('threshInput');
+  const val = parseFloat(input.value) || 5;
+  input.value = Math.min(parseFloat(input.max), val + parseFloat(input.step || 0.5));
+});
 
 $('langToggle').addEventListener('click', () => {
   const nextLang = currentLang === 'sv' ? 'en' : 'sv';
