@@ -125,9 +125,9 @@
     .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     .chart-title { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em; color: var(--muted); text-transform: uppercase; }
     .chart-range { font-family: var(--mono); font-size: 0.65rem; color: var(--muted); }
-    .chart-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+    .chart-tabs { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; white-space: nowrap; padding-bottom: 4px; }
     .chart-tab {
-      font-family: var(--mono); font-size: 0.65rem; padding: 4px 10px; border-radius: 100px;
+      flex-shrink: 0; font-family: var(--mono); font-size: 0.65rem; padding: 4px 8px; border-radius: 100px;
       border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.2s;
     }
     .chart-tab.active { background: rgba(59,130,246,0.15); border-color: rgba(59,130,246,0.4); color: #93c5fd; }
