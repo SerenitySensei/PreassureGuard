@@ -289,6 +289,9 @@
       <button class="chart-tab" data-hours="720" id="tab30d">30 days</button>
       <button class="chart-tab" data-hours="2160" id="tab90d">3 months</button>
       <button class="chart-tab" data-hours="8760" id="tab1y">1 year</button>
+      <button class="chart-tab" data-hours="17520" id="tab2y">2 years</button>
+      <button class="chart-tab" data-hours="43800" id="tab5y">5 years</button>
+      <button class="chart-tab" data-hours="0" id="tabAll">Since start</button>
     </div>
     <canvas id="chart"></canvas>
   </div>
@@ -541,6 +544,9 @@ function updateAllText() {
   setTextIfExists('tab30d', currentLang === 'en' ? '30 days' : '30 dagar');
   setTextIfExists('tab90d', currentLang === 'en' ? '3 months' : '3 mån');
   setTextIfExists('tab1y', currentLang === 'en' ? '1 year' : '1 år');
+  setTextIfExists('tab2y', currentLang === 'en' ? '2 years' : '2 år');
+  setTextIfExists('tab5y', currentLang === 'en' ? '5 years' : '5 år');
+  setTextIfExists('tabAll', currentLang === 'en' ? 'Since start' : 'Allting');
   setTextIfExists('lblReadings', t('readings'));
   setTextIfExists('lblOldest', t('oldest'));
   setTextIfExists('lblLastSave', t('lastSaved'));
