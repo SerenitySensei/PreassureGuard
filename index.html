@@ -287,6 +287,8 @@
       <button class="chart-tab" data-hours="24" id="tab24h">24h</button>
       <button class="chart-tab" data-hours="168" id="tab7d">7 days</button>
       <button class="chart-tab" data-hours="720" id="tab30d">30 days</button>
+      <button class="chart-tab" data-hours="2160" id="tab90d">3 months</button>
+      <button class="chart-tab" data-hours="8760" id="tab1y">1 year</button>
     </div>
     <canvas id="chart"></canvas>
   </div>
@@ -347,7 +349,7 @@ const db    = getFirestore(fbApp);
 const fn    = getFunctions(fbApp, 'europe-west1');
 const auth  = getAuth(fbApp);
 const COL   = "pressure_readings";
-const THIRTY_DAYS_MS = 30 * 24 * 3600 * 1000;
+const ONE_YEAR_MS = 365 * 24 * 3600 * 1000;
 
 // ─── Translations ────────────────────────────────────────────────────────────
 const translations = {
@@ -538,6 +540,8 @@ function updateAllText() {
   setTextIfExists('tab24h', '24h');
   setTextIfExists('tab7d', currentLang === 'en' ? '7 days' : '7 dagar');
   setTextIfExists('tab30d', currentLang === 'en' ? '30 days' : '30 dagar');
+  setTextIfExists('tab90d', currentLang === 'en' ? '3 months' : '3 mån');
+  setTextIfExists('tab1y', currentLang === 'en' ? '1 year' : '1 år');
   setTextIfExists('lblReadings', t('readings'));
   setTextIfExists('lblOldest', t('oldest'));
   setTextIfExists('lblLastSave', t('lastSaved'));
@@ -592,12 +596,12 @@ async function loadHistory(hours) {
 // ─── Firestore: statistik ────────────────────────────────────────────────────
 async function updateDbStats() {
   try {
-    const since30 = new Date(Date.now() - THIRTY_DAYS_MS);
+    const sinceYear = new Date(Date.now() - ONE_YEAR_MS);
     const since24 = new Date(Date.now() - 24 * 3600000);
 
-    // Antal mätningar (30 dagar) och äldsta post
+    // Antal mätningar (1 år) och äldsta post
     const q30 = query(collection(db, COL),
-      where("timestamp", ">=", Timestamp.fromDate(since30)),
+      where("timestamp", ">=", Timestamp.fromDate(sinceYear)),
       orderBy("timestamp", "asc"));
     const snap30 = await getDocs(q30);
     $('dbCount').textContent = snap30.size;
@@ -1093,7 +1097,7 @@ async function tick() {
     .sort((a, b) => a.time - b.time);
   // historyCache = senaste 30h för dygnsberäkning
   state.historyCache = [...state.historyCache, { time: Date.now(), hpa }]
-    .filter(r => r.time >= Date.now() - 108000000)
+    .filter(r => r.time >= Date.now() - ONE_YEAR_MS)
     .sort((a, b) => a.time - b.time);
   const { changePerMin, dayChange } = analyze();
   const { level } = calcMigraineRisk(hpa, dayChange);
@@ -1168,8 +1172,8 @@ window.addEventListener('resize', () => {
   await ensureAuth();
   await updateDbStats();
 
-  // Ladda 30h för att analyze() ska kunna beräkna dygnsförändring
-  const hist30 = await loadHistory(30);
+  // Ladda 1 år för att analyze() ska kunna beräkna dygnsförändring
+  const hist30 = await loadHistory(8760);
 
   // state.readings = senaste 2h (används av 2h-grafen och analyze())
   const twoHoursAgo = Date.now() - 2 * 3600000;
