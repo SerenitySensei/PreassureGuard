@@ -1115,29 +1115,13 @@ async function loadBackendLogs() {
 async function tick() {
   const hpa = await getPressure();
   if (hpa == null) { addLog(t('couldNotFetchPressure')); return; }
-  
-  // Sanity check: reject hpa if it's way off from recent readings (>10 hPa jump)
-  if (state.readings.length > 0) {
-    const recentAvg = state.readings.slice(-5)
-      .reduce((sum, r) => sum + r.hpa, 0) / Math.min(5, state.readings.length);
-    if (Math.abs(hpa - recentAvg) > 10) {
-      addLog('⚠️ Unrealistic pressure jump ignored');
-      return;
-    }
-  }
-  
-  // Ensure timestamp doesn't go backwards
-  const now = Date.now();
-  const lastTime = state.readings.length > 0 ? state.readings[state.readings.length - 1].time : 0;
-  const timestamp = Math.max(now, lastTime + 1);
-  
-  state.readings.push({ time: timestamp, hpa });
+  state.readings.push({ time: Date.now(), hpa });
   // Behåll 30 timmar i minnet (för dygnsberäkning + marginal)
   // state.readings = senaste 2h för 2h-grafen
   state.readings = state.readings.filter(r => r.time >= Date.now() - 7200000)
     .sort((a, b) => a.time - b.time);
   // historyCache = senaste 30h för dygnsberäkning
-  state.historyCache = [...state.historyCache, { time: timestamp, hpa }]
+  state.historyCache = [...state.historyCache, { time: Date.now(), hpa }]
     .filter(r => r.time >= Date.now() - 108000000)
     .sort((a, b) => a.time - b.time);
   const { changePerMin, dayChange } = analyze();
