@@ -612,14 +612,17 @@ async function updateDbStats() {
   try {
     const since24 = new Date(Date.now() - 24 * 3600000);
 
-    // Antal mätningar (all time) och äldsta post
+    // Antal mätningar (all time), äldsta och senaste post
     const q30 = query(collection(db, COL),
       orderBy("timestamp", "asc"));
     const snap30 = await getDocs(q30);
     $('dbCount').textContent = snap30.size;
     if (snap30.size > 0) {
       const oldest = snap30.docs[0].data().timestamp.toDate();
-      $('dbOldest').textContent = oldest.toLocaleDateString('sv-SE', { month:'short', day:'numeric' });
+      $('dbOldest').textContent = oldest.toLocaleDateString('en', { month:'short', day:'numeric' });
+      
+      const newest = snap30.docs[snap30.size - 1].data().timestamp.toDate();
+      $('dbLastSave').textContent = newest.toLocaleDateString('en', { month:'short', day:'numeric' });
     }
 
     // Min/max senaste 24 timmar
