@@ -622,7 +622,7 @@ async function updateDbStats() {
       $('dbOldest').textContent = oldest.toLocaleDateString('en', { month:'short', day:'numeric' });
       
       const newest = snap30.docs[snap30.size - 1].data().timestamp.toDate();
-      $('dbLastSave').textContent = newest.toLocaleDateString('en', { month:'short', day:'numeric' });
+      $('dbLastSave').textContent = newest.toLocaleTimeString('en', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false });
     }
 
     // Min/max senaste 24 timmar
