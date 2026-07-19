@@ -649,17 +649,6 @@ const FALLBACK_LON = 18.0762;
 // Cachas efter första lyckade GPS-hämtning – positionen låses för hela sessionen
 let cachedLat = null, cachedLon = null;
 
-async function getPosition() {
-  if (!navigator.geolocation) throw new Error('Geolocation stöds ej');
-  return new Promise((res, rej) => {
-    navigator.geolocation.getCurrentPosition(res, rej, {
-      timeout: 10000,
-      maximumAge: 300000,   // acceptera position upp till 5 min gammal
-      enableHighAccuracy: false
-    });
-  });
-}
-
 async function fetchHpaFromCoords(lat, lon) {
   const r = await fetch(
     `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}&current=surface_pressure`,
@@ -673,36 +662,18 @@ async function fetchHpaFromCoords(lat, lon) {
 }
 
 async function fetchApiHpa() {
-  // Om vi redan har cachade koordinater – använd dem direkt utan GPS-anrop
-  if (cachedLat !== null) {
-    try {
-      return await fetchHpaFromCoords(cachedLat, cachedLon);
-    } catch (e) {
-      addLog(t('apiError') + e.message);
-      return null;
-    }
-  }
-
-  // Första anropet: försök hämta GPS-position
+  // Always use Vallentuna hardcoded location, skip geolocation request
   try {
-    const pos = await getPosition();
-    cachedLat = pos.coords.latitude;
-    cachedLon = pos.coords.longitude;
-    addLog(t('positionLocked') + cachedLat.toFixed(4) + ', ' + cachedLon.toFixed(4));
-    state.usingFallback = false;
-    return await fetchHpaFromCoords(cachedLat, cachedLon);
-  } catch (e1) {
-    // GPS misslyckades – lås till Vallentuna som fast position
-    addLog(t('locationFailed') + e1.message + t('lockingToFallback'));
-    cachedLat = FALLBACK_LAT;
-    cachedLon = FALLBACK_LON;
-    state.usingFallback = true;
-    try {
-      return await fetchHpaFromCoords(cachedLat, cachedLon);
-    } catch (e2) {
-      addLog(t('apiError') + e2.message);
-      return null;
+    if (cachedLat === null) {
+      cachedLat = FALLBACK_LAT;
+      cachedLon = FALLBACK_LON;
+      addLog(t('positionLocked') + cachedLat.toFixed(4) + ', ' + cachedLon.toFixed(4));
+      state.usingFallback = true;
     }
+    return await fetchHpaFromCoords(cachedLat, cachedLon);
+  } catch (e) {
+    addLog(t('apiError') + e.message);
+    return null;
   }
 }
 
